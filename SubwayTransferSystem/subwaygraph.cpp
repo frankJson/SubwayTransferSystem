@@ -342,7 +342,6 @@ bool SubwayGraph::queryTransferMinTime(int s1, int s2, QList<int>&stationsList, 
         stationsList.push_back(s1);
         return true;
     }
-    makeGraph();
 
     std::vector<int> path(stations.size(), -1);
     std::vector<double> dist(stations.size(), INF);
