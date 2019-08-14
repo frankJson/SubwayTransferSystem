@@ -103,7 +103,7 @@ bool SubwayGraph::readFileData(QString fileName)
     file.close();
 
     updateMinMaxLongiLati();
-
+    makeGraph();
     return true;
 }
 
@@ -387,52 +387,54 @@ bool SubwayGraph::queryTransferMinTime(int s1, int s2, QList<int>&stationsList, 
     return true;
 }
 
-//获取最少换乘的线路
+//获取最少换乘的线路 采用广度遍历算法
 bool SubwayGraph::queryTransferMinTransfer(int s1, int s2, QList<int>&stationsList, QList<Edge>&edgesList)
 {
     stationsList.clear();
     edgesList.clear();
-
-    if(s1==s2)
+    QVector<int> priQ;
+    std::vector<int> path(stations.size(), -1);
+    priQ.clear();
+    priQ.push_back(s1);
+    bool isEnd = false;
+    qDebug() << "s1:" << s1;
+    while(!priQ.empty())
     {
-        stationsList.push_back(s2);
-        stationsList.push_back(s1);
-        return true;
-    }
-
-    std::vector<bool> linesVisted(lines.size(),false);
-    std::vector<int> path(stations.size(),-1);
-    path[s1]=-2;
-    std::queue<int> que;
-    que.push(s1);
-
-    while(!que.empty())
-    {
-        int top=que.front();
-        que.pop();
-        for (auto &l: stations[top].linesInfo)
+        int nS = priQ.front();
+        priQ.pop_front();
+        for(int i = 0; i < graph[nS].size(); ++i)
         {
-            if(!linesVisted[l])
+            Node &adjNode=graph[nS][i];
+            if(-1 == path[adjNode.stationID])
             {
-                linesVisted[l]=true;
-                for (auto &s: lines[l].stationsSet)
-                {
-                    if(path[s]==-1)
-                    {
-                        path[s]=top;
-                        que.push(s);
-                    }
-                }
+                path[adjNode.stationID]= nS;
+            }
+            else
+            {
+                continue;
+            }
+
+            if(s2 != adjNode.stationID)
+            {
+                priQ.push_back(adjNode.stationID);
+            }
+            else
+            {
+                isEnd = true;
             }
         }
+        if(isEnd)
+        {
+            break;
+        }
     }
-
     if(path[s2]==-1)
     {
         return false;
     }
     int p=s2;
-    while(path[p]!=-2)
+    path[s1] = -1;
+    while(path[p]!=-1)
     {
         stationsList.push_front(p);
         edgesList.push_front(Edge(path[p],p));
